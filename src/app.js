@@ -20,9 +20,9 @@ app.use(
 );
 
 app.get('/', (req, res) => {
-  logger.info('Hello from Aquisations!');
+  logger.info('Hello from Acquisitions!');
 
-  res.status(200).send('Hello from Aquisations!');
+  res.status(200).send('Hello from Acquisitions!');
 });
 
 export default app;
