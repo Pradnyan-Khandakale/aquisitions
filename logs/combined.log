@@ -72,3 +72,8 @@
 {"level":"info","message":"User registered successfully: adriea@lin.com","service":"acquisitions-api","timestamp":"2026-03-24T18:18:24.673Z"}
 {"level":"info","message":"::1 - - [24/Mar/2026:18:18:24 +0000] \"POST /api/auth/sign-up HTTP/1.1\" 201 100 \"-\" \"HTTPie\"","service":"acquisitions-api","timestamp":"2026-03-24T18:18:24.676Z"}
 {"level":"info","message":"::1 - - [12/Apr/2026:08:46:37 +0000] \"POST /api/auth/sign-in HTTP/1.1\" 200 31 \"-\" \"HTTPie\"","service":"acquisitions-api","timestamp":"2026-04-12T08:46:37.477Z"}
+{"level":"info","message":"User adriea@lin.com authenticated successfully","service":"acquisitions-api","timestamp":"2026-04-12T08:54:33.247Z"}
+{"level":"info","message":"User signed in successfully: adriea@lin.com","service":"acquisitions-api","timestamp":"2026-04-12T08:54:33.269Z"}
+{"level":"info","message":"::1 - - [12/Apr/2026:08:54:33 +0000] \"POST /api/auth/sign-in HTTP/1.1\" 200 112 \"-\" \"HTTPie\"","service":"acquisitions-api","timestamp":"2026-04-12T08:54:33.281Z"}
+{"level":"info","message":"User signed out successfully","service":"acquisitions-api","timestamp":"2026-04-12T08:55:18.756Z"}
+{"level":"info","message":"::1 - - [12/Apr/2026:08:55:18 +0000] \"POST /api/auth/sign-out HTTP/1.1\" 200 42 \"-\" \"HTTPie\"","service":"acquisitions-api","timestamp":"2026-04-12T08:55:18.759Z"}
