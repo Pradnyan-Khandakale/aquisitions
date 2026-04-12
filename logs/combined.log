@@ -71,3 +71,4 @@
 {"level":"info","message":"User adriea@lin.com created successfully","service":"acquisitions-api","timestamp":"2026-03-24T18:18:24.658Z"}
 {"level":"info","message":"User registered successfully: adriea@lin.com","service":"acquisitions-api","timestamp":"2026-03-24T18:18:24.673Z"}
 {"level":"info","message":"::1 - - [24/Mar/2026:18:18:24 +0000] \"POST /api/auth/sign-up HTTP/1.1\" 201 100 \"-\" \"HTTPie\"","service":"acquisitions-api","timestamp":"2026-03-24T18:18:24.676Z"}
+{"level":"info","message":"::1 - - [12/Apr/2026:08:46:37 +0000] \"POST /api/auth/sign-in HTTP/1.1\" 200 31 \"-\" \"HTTPie\"","service":"acquisitions-api","timestamp":"2026-04-12T08:46:37.477Z"}
