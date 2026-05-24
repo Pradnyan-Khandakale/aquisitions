@@ -4,7 +4,12 @@ import { slidingWindow } from '@arcjet/node';
 
 const securityMiddleware = async (req, res, next) => {
   try {
-    const role = req.user?.role || 'guest';
+    let role = req.user?.role;
+    if (!role || typeof role !== 'string' || role.trim() === '') {
+      role = 'guest';
+    } else {
+      role = role.trim();
+    }
 
     let limit;
 
@@ -17,6 +22,10 @@ const securityMiddleware = async (req, res, next) => {
         break;
       case 'guest':
         limit = 5;
+        break;
+      default:
+        limit = 5;
+        logger.warn('Unknown role, using default limit', { role });
         break;
     }
 
@@ -66,15 +75,15 @@ const securityMiddleware = async (req, res, next) => {
       });
 
       return res
-        .status(403)
-        .json({ error: 'Forbidden', message: 'Too many requests' });
+        .status(429)
+        .json({ error: 'Too Many Requests', message: 'Too many requests' });
     }
 
     next();
   } catch (e) {
-    console.error('Arcjet middleware error:', e);
-    res.status(500).json({
-      errro: 'Internal server error',
+    logger.error('Arcjet middleware error:', e);
+    return res.status(500).json({
+      error: 'Internal server error',
       message: 'Something went wrong with security middleware',
     });
   }
