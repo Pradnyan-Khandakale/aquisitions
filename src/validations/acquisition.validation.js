@@ -4,13 +4,39 @@ export const createAcquisitionSchema = z
   .object({
     title: z.string().min(1, 'Acquisition title is required').max(255).trim(),
     description: z.string().max(5000).trim().optional().nullable(),
-    company_id: z.coerce.number().int().positive('Company ID must be a positive integer').optional(),
-    companyId: z.coerce.number().int().positive('Company ID must be a positive integer').optional(),
-    deal_stage_id: z.coerce.number().int().positive('Deal stage ID must be a positive integer').optional(),
-    dealStageId: z.coerce.number().int().positive('Deal stage ID must be a positive integer').optional(),
-    status: z.enum(['active', 'won', 'lost', 'abandoned', 'on-hold']).default('active'),
-    estimated_value: z.coerce.number().positive('Estimated value must be a positive number').optional().nullable(),
-    estimatedValue: z.coerce.number().positive('Estimated value must be a positive number').optional().nullable(),
+    company_id: z.coerce
+      .number()
+      .int()
+      .positive('Company ID must be a positive integer')
+      .optional(),
+    companyId: z.coerce
+      .number()
+      .int()
+      .positive('Company ID must be a positive integer')
+      .optional(),
+    deal_stage_id: z.coerce
+      .number()
+      .int()
+      .positive('Deal stage ID must be a positive integer')
+      .optional(),
+    dealStageId: z.coerce
+      .number()
+      .int()
+      .positive('Deal stage ID must be a positive integer')
+      .optional(),
+    status: z
+      .enum(['active', 'won', 'lost', 'abandoned', 'on-hold'])
+      .default('active'),
+    estimated_value: z.coerce
+      .number()
+      .positive('Estimated value must be a positive number')
+      .optional()
+      .nullable(),
+    estimatedValue: z.coerce
+      .number()
+      .positive('Estimated value must be a positive number')
+      .optional()
+      .nullable(),
     target_close_date: z.coerce.date().optional().nullable(),
     targetCloseDate: z.coerce.date().optional().nullable(),
   })
@@ -34,20 +60,44 @@ export const createAcquisitionSchema = z
 
 export const updateAcquisitionSchema = z
   .object({
-    title: z.string().min(1, 'Title cannot be empty').max(255).trim().optional(),
+    title: z
+      .string()
+      .min(1, 'Title cannot be empty')
+      .max(255)
+      .trim()
+      .optional(),
     description: z.string().max(5000).trim().optional().nullable(),
-    company_id: z.coerce.number().int().positive('Company ID must be a positive integer').optional(),
-    companyId: z.coerce.number().int().positive('Company ID must be a positive integer').optional(),
-    status: z.enum(['active', 'won', 'lost', 'abandoned', 'on-hold']).optional(),
-    estimated_value: z.coerce.number().positive('Estimated value must be a positive number').optional().nullable(),
-    estimatedValue: z.coerce.number().positive('Estimated value must be a positive number').optional().nullable(),
+    company_id: z.coerce
+      .number()
+      .int()
+      .positive('Company ID must be a positive integer')
+      .optional(),
+    companyId: z.coerce
+      .number()
+      .int()
+      .positive('Company ID must be a positive integer')
+      .optional(),
+    status: z
+      .enum(['active', 'won', 'lost', 'abandoned', 'on-hold'])
+      .optional(),
+    estimated_value: z.coerce
+      .number()
+      .positive('Estimated value must be a positive number')
+      .optional()
+      .nullable(),
+    estimatedValue: z.coerce
+      .number()
+      .positive('Estimated value must be a positive number')
+      .optional()
+      .nullable(),
     target_close_date: z.coerce.date().optional().nullable(),
     targetCloseDate: z.coerce.date().optional().nullable(),
   })
   .transform(data => {
     const transformed = {};
     if (data.title !== undefined) transformed.title = data.title;
-    if (data.description !== undefined) transformed.description = data.description;
+    if (data.description !== undefined)
+      transformed.description = data.description;
     const cid = data.company_id ?? data.companyId;
     if (cid !== undefined) transformed.company_id = cid;
     if (data.status !== undefined) transformed.status = data.status;
@@ -62,5 +112,8 @@ export const updateAcquisitionSchema = z
   });
 
 export const acquisitionIdParamSchema = z.object({
-  id: z.coerce.number().int().positive('Acquisition ID must be a positive integer'),
+  id: z.coerce
+    .number()
+    .int()
+    .positive('Acquisition ID must be a positive integer'),
 });

@@ -59,7 +59,9 @@ export const getDealStage = async (req, res, next) => {
       });
     }
 
-    const stage = await dealStageService.getDealStageById(paramValidation.data.id);
+    const stage = await dealStageService.getDealStageById(
+      paramValidation.data.id
+    );
     if (!stage) {
       return res.status(404).json({
         error: 'Not Found',
@@ -134,7 +136,9 @@ export const deleteDealStage = async (req, res, next) => {
       });
     }
 
-    const deleted = await dealStageService.deleteDealStage(paramValidation.data.id);
+    const deleted = await dealStageService.deleteDealStage(
+      paramValidation.data.id
+    );
     if (deleted === null) {
       return res.status(404).json({
         error: 'Not Found',

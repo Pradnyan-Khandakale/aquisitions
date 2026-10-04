@@ -59,7 +59,9 @@ export const getCompany = async (req, res, next) => {
       });
     }
 
-    const company = await companyService.getCompanyById(paramValidation.data.id);
+    const company = await companyService.getCompanyById(
+      paramValidation.data.id
+    );
     if (!company) {
       return res.status(404).json({
         error: 'Not Found',

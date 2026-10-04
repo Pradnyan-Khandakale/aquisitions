@@ -5,7 +5,8 @@ import { getAcquisitionById } from '#services/acquisition.service.js';
 import { eq, and, asc } from 'drizzle-orm';
 import logger from '#config/logger.js';
 
-const TERMINAL_STAGE_REGEX = /^(closed|closed won|closed lost|rejected|cancelled|abandoned)$/i;
+const TERMINAL_STAGE_REGEX =
+  /^(closed|closed won|closed lost|rejected|cancelled|abandoned)$/i;
 const REJECTION_STAGE_REGEX = /^(rejected|cancelled|abandoned|closed lost)$/i;
 
 export const transitionAcquisitionStage = async ({
@@ -17,7 +18,9 @@ export const transitionAcquisitionStage = async ({
   try {
     // 1. Authentication check
     if (!user) {
-      const err = new Error('Authentication required to transition an acquisition stage');
+      const err = new Error(
+        'Authentication required to transition an acquisition stage'
+      );
       err.code = 'UNAUTHORIZED';
       err.status = 401;
       throw err;
@@ -39,7 +42,8 @@ export const transitionAcquisitionStage = async ({
 
     // 3. Authorization check (admin or owner/creator)
     const isAdmin = user.role === 'admin';
-    const isOwner = acquisition.created_by === null || acquisition.created_by === user.id;
+    const isOwner =
+      acquisition.created_by === null || acquisition.created_by === user.id;
 
     if (!isAdmin && !isOwner) {
       const err = new Error('Not authorized to transition this acquisition');
@@ -56,7 +60,9 @@ export const transitionAcquisitionStage = async ({
       .limit(1);
 
     if (!targetStage) {
-      const err = new Error(`Target deal stage with ID ${targetStageId} not found`);
+      const err = new Error(
+        `Target deal stage with ID ${targetStageId} not found`
+      );
       err.code = 'STAGE_NOT_FOUND';
       err.status = 404;
       throw err;
@@ -70,7 +76,9 @@ export const transitionAcquisitionStage = async ({
       .limit(1);
 
     if (!currentStage) {
-      const err = new Error('Current acquisition deal stage record is corrupted or missing');
+      const err = new Error(
+        'Current acquisition deal stage record is corrupted or missing'
+      );
       err.code = 'INTERNAL_ERROR';
       err.status = 500;
       throw err;
@@ -80,7 +88,9 @@ export const transitionAcquisitionStage = async ({
 
     // 6a. Same-stage check
     if (currentStage.id === targetStage.id) {
-      const err = new Error(`Acquisition is already in stage '${currentStage.name}'`);
+      const err = new Error(
+        `Acquisition is already in stage '${currentStage.name}'`
+      );
       err.code = 'SAME_STAGE';
       err.status = 409;
       throw err;
@@ -119,7 +129,8 @@ export const transitionAcquisitionStage = async ({
       }
 
       if (targetIndex > currentIndex + 1) {
-        const expectedNext = allStages[currentIndex + 1]?.name || 'next sequential stage';
+        const expectedNext =
+          allStages[currentIndex + 1]?.name || 'next sequential stage';
         const err = new Error(
           `Invalid stage transition: Cannot jump from '${currentStage.name}' to '${targetStage.name}'. Next allowed stage is '${expectedNext}'`
         );
@@ -130,8 +141,13 @@ export const transitionAcquisitionStage = async ({
     }
 
     // 7. Business gates / prerequisites validation
-    const isClosingStage = /^(approved|closed|closed won)$/i.test(targetStage.name);
-    if (isClosingStage && (!acquisition.estimated_value || Number(acquisition.estimated_value) <= 0)) {
+    const isClosingStage = /^(approved|closed|closed won)$/i.test(
+      targetStage.name
+    );
+    if (
+      isClosingStage &&
+      (!acquisition.estimated_value || Number(acquisition.estimated_value) <= 0)
+    ) {
       const err = new Error(
         `Cannot advance acquisition to '${targetStage.name}' without a valid estimated valuation`
       );
@@ -204,7 +220,10 @@ export const transitionAcquisitionStage = async ({
       },
     };
   } catch (err) {
-    logger.error(`Stage transition error for acquisition ${acquisitionId}:`, err);
+    logger.error(
+      `Stage transition error for acquisition ${acquisitionId}:`,
+      err
+    );
     throw err;
   }
 };

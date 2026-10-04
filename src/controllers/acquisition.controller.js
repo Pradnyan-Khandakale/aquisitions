@@ -68,7 +68,9 @@ export const getAcquisition = async (req, res, next) => {
       });
     }
 
-    const item = await acquisitionService.getAcquisitionById(paramValidation.data.id);
+    const item = await acquisitionService.getAcquisitionById(
+      paramValidation.data.id
+    );
     if (!item) {
       return res.status(404).json({
         error: 'Not Found',
@@ -89,7 +91,10 @@ export const getAcquisition = async (req, res, next) => {
 export const updateAcquisition = async (req, res, next) => {
   try {
     // Explicitly block attempts to bypass the lifecycle policy via generic PATCH
-    if (req.body.deal_stage_id !== undefined || req.body.dealStageId !== undefined) {
+    if (
+      req.body.deal_stage_id !== undefined ||
+      req.body.dealStageId !== undefined
+    ) {
       return res.status(400).json({
         error: 'Bad Request',
         message:
@@ -208,7 +213,9 @@ export const deleteAcquisition = async (req, res, next) => {
       });
     }
 
-    const deleted = await acquisitionService.deleteAcquisition(paramValidation.data.id);
+    const deleted = await acquisitionService.deleteAcquisition(
+      paramValidation.data.id
+    );
     if (!deleted) {
       return res.status(404).json({
         error: 'Not Found',

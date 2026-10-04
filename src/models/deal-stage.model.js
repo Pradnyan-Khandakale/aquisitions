@@ -1,4 +1,11 @@
-import { pgTable, serial, varchar, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  integer,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { acquisitions } from './acquisition.model.js';
 

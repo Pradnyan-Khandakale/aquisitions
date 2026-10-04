@@ -27,7 +27,9 @@ export const createDealStage = async ({ name, description, sequence = 0 }) => {
       })
       .returning();
 
-    logger.info(`Deal stage created successfully: ${newStage.name} (id: ${newStage.id})`);
+    logger.info(
+      `Deal stage created successfully: ${newStage.name} (id: ${newStage.id})`
+    );
     return newStage;
   } catch (err) {
     logger.error('Error creating deal stage:', err);
@@ -80,7 +82,9 @@ export const updateDealStage = async (id, updateData) => {
       const [nameConflict] = await db
         .select({ id: deal_stages.id })
         .from(deal_stages)
-        .where(and(eq(deal_stages.name, updateData.name), ne(deal_stages.id, id)))
+        .where(
+          and(eq(deal_stages.name, updateData.name), ne(deal_stages.id, id))
+        )
         .limit(1);
 
       if (nameConflict) {
@@ -99,7 +103,9 @@ export const updateDealStage = async (id, updateData) => {
       .where(eq(deal_stages.id, id))
       .returning();
 
-    logger.info(`Deal stage updated successfully: ${updated.name} (id: ${updated.id})`);
+    logger.info(
+      `Deal stage updated successfully: ${updated.name} (id: ${updated.id})`
+    );
     return updated;
   } catch (err) {
     logger.error(`Error updating deal stage ${id}:`, err);
@@ -126,7 +132,9 @@ export const deleteDealStage = async id => {
       .where(eq(acquisitions.deal_stage_id, id));
 
     if (usage && usage.count > 0) {
-      const err = new Error('Cannot delete deal stage that is currently in use by acquisitions');
+      const err = new Error(
+        'Cannot delete deal stage that is currently in use by acquisitions'
+      );
       err.code = 'IN_USE';
       throw err;
     }

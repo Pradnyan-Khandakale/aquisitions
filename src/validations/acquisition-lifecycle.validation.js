@@ -2,8 +2,16 @@ import { z } from 'zod';
 
 export const stageTransitionSchema = z
   .object({
-    targetStageId: z.coerce.number().int().positive('targetStageId must be a positive integer').optional(),
-    target_stage_id: z.coerce.number().int().positive('target_stage_id must be a positive integer').optional(),
+    targetStageId: z.coerce
+      .number()
+      .int()
+      .positive('targetStageId must be a positive integer')
+      .optional(),
+    target_stage_id: z.coerce
+      .number()
+      .int()
+      .positive('target_stage_id must be a positive integer')
+      .optional(),
     notes: z.string().max(1000).trim().optional().nullable(),
   })
   .transform(data => ({
@@ -16,5 +24,8 @@ export const stageTransitionSchema = z
   });
 
 export const acquisitionIdParamSchema = z.object({
-  id: z.coerce.number().int().positive('Acquisition ID must be a positive integer'),
+  id: z.coerce
+    .number()
+    .int()
+    .positive('Acquisition ID must be a positive integer'),
 });

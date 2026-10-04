@@ -3,6 +3,7 @@
 ## 1. Secrets Management Policy
 
 ### Tracked vs Untracked Files
+
 - **Tracked in Git:** ONLY safe template files containing non-sensitive placeholders (e.g., `.env.example`).
 - **Strictly Untracked (Ignored):**
   - `.env`
@@ -17,6 +18,7 @@ Never commit actual credentials, API keys, JWT secrets, or production connection
 ## 2. Environment Configuration Guide
 
 ### Local Development Setup
+
 1. Copy the safe template:
    ```bash
    cp .env.example .env.development
@@ -29,6 +31,7 @@ Never commit actual credentials, API keys, JWT secrets, or production connection
 3. Never stage or commit `.env.development` to version control.
 
 ### Production Environment Setup
+
 1. **No committed `.env.production` files:** Production secrets must NOT be stored in repository files or Docker images.
 2. In production, configuration must be injected securely at runtime via:
    - Cloud Secret Managers (e.g., AWS Secrets Manager, GCP Secret Manager, Doppler, or HashiCorp Vault).
@@ -56,3 +59,60 @@ Due to historical repository exposure prior to the Phase 1.1 remediation, the fo
    - **Action Required:** In the Arcjet Dashboard, revoke existing `ajkey_...` keys and issue new keys for development and production environments.
 4. **JWT Signing Secret:**
    - **Action Required:** Generate a new, cryptographically secure 256-bit secret for production token signing. Ensure no instances use the historical placeholder values.
+
+---
+
+## 4. Code Quality & Security Gates (Phase 3.2)
+
+To ensure code quality and prevent security regressions prior to CI/CD and deployment, all code must pass the local quality gate:
+
+### Individual Commands
+
+- **Lint Check:**
+  ```bash
+  npm run lint
+  ```
+- **Formatting Check:**
+  ```bash
+  npm run format:check
+  ```
+- **Automated Tests:**
+  ```bash
+  npm test
+  ```
+- **Test Coverage:**
+  ```bash
+  npm run test:coverage
+  ```
+- **Dependency Vulnerability Audit:**
+  ```bash
+  npm run audit:check
+  # or standard npm audit:
+  npm audit --audit-level=high
+  ```
+- **Container Build & Scan:**
+
+  ```bash
+  # Build production image
+  npm run docker:build
+
+  # Scan with Trivy (standalone or via container)
+  trivy image --severity HIGH,CRITICAL acquisitions-app:latest
+  # Or via Docker if Trivy is not installed locally:
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL acquisitions-app:latest
+  ```
+
+### Combined Quality Gate
+
+Run the full gate sequentially before committing:
+
+```bash
+npm run quality
+```
+
+The command enforces:
+
+1. `npm run format:check` (Prettier)
+2. `npm run lint` (ESLint)
+3. `npm run test:coverage` (Jest & Supertest with coverage thresholds)
+4. `npm run audit:check` (npm audit for HIGH/CRITICAL production vulnerabilities)

@@ -3,7 +3,12 @@ import { companies } from '#models/company.model.js';
 import { eq, and, ne, desc } from 'drizzle-orm';
 import logger from '#config/logger.js';
 
-export const createCompany = async ({ name, description, industry, website }) => {
+export const createCompany = async ({
+  name,
+  description,
+  industry,
+  website,
+}) => {
   try {
     const [existing] = await db
       .select({ id: companies.id })
@@ -27,7 +32,9 @@ export const createCompany = async ({ name, description, industry, website }) =>
       })
       .returning();
 
-    logger.info(`Company created successfully: ${newCompany.name} (id: ${newCompany.id})`);
+    logger.info(
+      `Company created successfully: ${newCompany.name} (id: ${newCompany.id})`
+    );
     return newCompany;
   } catch (err) {
     logger.error('Error creating company:', err);
@@ -99,7 +106,9 @@ export const updateCompany = async (id, updateData) => {
       .where(eq(companies.id, id))
       .returning();
 
-    logger.info(`Company updated successfully: ${updated.name} (id: ${updated.id})`);
+    logger.info(
+      `Company updated successfully: ${updated.name} (id: ${updated.id})`
+    );
     return updated;
   } catch (err) {
     logger.error(`Error updating company ${id}:`, err);

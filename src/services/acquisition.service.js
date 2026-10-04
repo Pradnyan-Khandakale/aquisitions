@@ -25,7 +25,9 @@ export const createAcquisition = async ({
       .limit(1);
 
     if (!company) {
-      const err = new Error(`Referenced company with ID ${company_id} does not exist`);
+      const err = new Error(
+        `Referenced company with ID ${company_id} does not exist`
+      );
       err.code = 'RELATION_NOT_FOUND';
       throw err;
     }
@@ -37,7 +39,9 @@ export const createAcquisition = async ({
       .limit(1);
 
     if (!stage) {
-      const err = new Error(`Referenced deal stage with ID ${deal_stage_id} does not exist`);
+      const err = new Error(
+        `Referenced deal stage with ID ${deal_stage_id} does not exist`
+      );
       err.code = 'RELATION_NOT_FOUND';
       throw err;
     }
@@ -67,12 +71,16 @@ export const createAcquisition = async ({
           estimated_value !== null && estimated_value !== undefined
             ? String(estimated_value)
             : null,
-        target_close_date: target_close_date ? new Date(target_close_date) : null,
+        target_close_date: target_close_date
+          ? new Date(target_close_date)
+          : null,
         created_by: validCreatorId,
       })
       .returning();
 
-    logger.info(`Acquisition created successfully: ${inserted.title} (id: ${inserted.id})`);
+    logger.info(
+      `Acquisition created successfully: ${inserted.title} (id: ${inserted.id})`
+    );
     return await getAcquisitionById(inserted.id);
   } catch (err) {
     logger.error('Error creating acquisition:', err);
@@ -185,7 +193,9 @@ export const updateAcquisition = async (id, updateData) => {
         .limit(1);
 
       if (!company) {
-        const err = new Error(`Referenced company with ID ${updateData.company_id} does not exist`);
+        const err = new Error(
+          `Referenced company with ID ${updateData.company_id} does not exist`
+        );
         err.code = 'RELATION_NOT_FOUND';
         throw err;
       }
@@ -199,7 +209,9 @@ export const updateAcquisition = async (id, updateData) => {
         .limit(1);
 
       if (!stage) {
-        const err = new Error(`Referenced deal stage with ID ${updateData.deal_stage_id} does not exist`);
+        const err = new Error(
+          `Referenced deal stage with ID ${updateData.deal_stage_id} does not exist`
+        );
         err.code = 'RELATION_NOT_FOUND';
         throw err;
       }
@@ -208,17 +220,18 @@ export const updateAcquisition = async (id, updateData) => {
     const payload = { ...updateData, updated_at: new Date() };
     if (payload.estimated_value !== undefined) {
       payload.estimated_value =
-        payload.estimated_value !== null ? String(payload.estimated_value) : null;
+        payload.estimated_value !== null
+          ? String(payload.estimated_value)
+          : null;
     }
     if (payload.target_close_date !== undefined) {
       payload.target_close_date =
-        payload.target_close_date !== null ? new Date(payload.target_close_date) : null;
+        payload.target_close_date !== null
+          ? new Date(payload.target_close_date)
+          : null;
     }
 
-    await db
-      .update(acquisitions)
-      .set(payload)
-      .where(eq(acquisitions.id, id));
+    await db.update(acquisitions).set(payload).where(eq(acquisitions.id, id));
 
     logger.info(`Acquisition updated successfully (id: ${id})`);
     return await getAcquisitionById(id);

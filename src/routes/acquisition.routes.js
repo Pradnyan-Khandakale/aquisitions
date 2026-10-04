@@ -7,7 +7,10 @@ import {
   transitionStage,
   deleteAcquisition,
 } from '#controllers/acquisition.controller.js';
-import { authenticate, optionalAuthenticate } from '#middleware/auth.middleware.js';
+import {
+  authenticate,
+  optionalAuthenticate,
+} from '#middleware/auth.middleware.js';
 
 const router = express.Router();
 

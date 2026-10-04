@@ -9,7 +9,12 @@ export const createCompanySchema = z.object({
 
 export const updateCompanySchema = z
   .object({
-    name: z.string().min(1, 'Company name cannot be empty').max(255).trim().optional(),
+    name: z
+      .string()
+      .min(1, 'Company name cannot be empty')
+      .max(255)
+      .trim()
+      .optional(),
     description: z.string().max(2000).trim().optional().nullable(),
     industry: z.string().max(100).trim().optional().nullable(),
     website: z.string().max(255).trim().optional().nullable(),

@@ -3,18 +3,23 @@ import winston from 'winston';
 const isProduction = process.env.NODE_ENV === 'production';
 const isTest = process.env.NODE_ENV === 'test';
 
+let consoleFormat;
+if (isProduction) {
+  consoleFormat = winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  );
+} else {
+  consoleFormat = winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  );
+}
+
 const transports = [
   new winston.transports.Console({
-    format: isProduction
-      ? winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-      )
-      : winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+    format: consoleFormat,
   }),
 ];
 

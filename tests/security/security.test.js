@@ -123,7 +123,7 @@ describe('Security Regression, Validation & Error Handling Tests', () => {
 
     it('[Invariant 7] malformed input cannot reach unsafe database operations or leak internals', async () => {
       // Attempt SQL injection via ID parameter
-      const res = await request(app).get('/api/companies/1\' OR \'1\'=\'1\'');
+      const res = await request(app).get("/api/companies/1' OR '1'='1'");
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error', 'Validation failed');
