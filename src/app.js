@@ -4,11 +4,14 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import { timestamp } from 'drizzle-orm/gel-core';
+import { db } from '#config/database.js';
 import authRoutes from '#routes/auth.routes.js';
 import securityMiddleware from '#middleware/security.middleware.js';
 
 const app = express();
+
+// Trust first proxy hop (Docker bridge, ALB, Nginx, Cloudflare)
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(express.json());
@@ -22,20 +25,58 @@ app.use(
   })
 );
 
+// -------------------------------------------------------------
+// Health Probes (Defined before securityMiddleware to avoid bot/rate-limit blocking)
+// -------------------------------------------------------------
+
+// Lightweight liveness probe: process is running and responding
+app.get('/health/live', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Deep readiness probe: verifies database connectivity
+app.get('/health/ready', async (req, res) => {
+  try {
+    await db.execute('SELECT 1');
+    res.status(200).json({
+      status: 'READY',
+      database: 'connected',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error('Readiness probe database connection failed', { error: err.message });
+    res.status(503).json({
+      status: 'NOT_READY',
+      database: 'disconnected',
+      error: err.message,
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Backward-compatible alias for existing /health checks
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// -------------------------------------------------------------
+// Protected Application Routes
+// -------------------------------------------------------------
 app.use(securityMiddleware);
 
 app.get('/', (req, res) => {
   logger.info('Hello from Acquisitions!');
-
   res.status(200).send('Hello from Acquisitions!');
-});
-
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
 });
 
 app.get('/api', (req, res) => {

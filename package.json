@@ -25,7 +25,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "dev:docker": "sh ./scripts/dev.sh",
-    "prod:docker": "sh ./scripts/prod.sh"
+    "prod:docker": "sh ./scripts/prod.sh",
+    "docker:dev": "sh ./scripts/dev.sh",
+    "docker:prod": "sh ./scripts/prod.sh"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "repository": {
     "type": "git",
@@ -47,6 +52,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
+    "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
@@ -57,7 +63,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "drizzle-kit": "^0.31.10",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",

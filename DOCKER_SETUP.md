@@ -74,7 +74,7 @@ CORS_ORIGIN=https://yourdomain.com
 npm run docker:dev
 
 # Or manually
-docker-compose -f docker-compose.dev.yml --env-file .env.development up --build
+docker compose -f docker-compose.dev.yml --env-file .env.development up --build
 ```
 
 This will:
@@ -88,26 +88,26 @@ This will:
 
 ```bash
 # View logs
-npm run docker:logs:dev
+docker compose -f docker-compose.dev.yml logs -f app
 
 # Stop and remove containers + volumes
-npm run docker:dev:down
+docker compose -f docker-compose.dev.yml down -v
 
 # Rebuild containers
-npm run docker:build:dev
+docker compose -f docker-compose.dev.yml build
 
 # Run database migrations (inside running container)
-docker exec acquisitions-app-dev npm run db:migrate
+docker compose -f docker-compose.dev.yml exec app npm run db:migrate
 
 # Open Drizzle Studio (inside running container)
-docker exec acquisitions-app-dev npm run db:studio
+docker compose -f docker-compose.dev.yml exec app npm run db:studio
 ```
 
 ### Development Features
 
 - **Hot Reload**: Code changes automatically restart the server
 - **Fresh Database**: Each `docker:dev` creates a new database branch
-- **Volume Mounts**: Source code and logs are mounted for easy access
+- **Volume Mounts**: Source code is mounted for live development
 - **Debug Logging**: Verbose logging for development
 
 ## 🏭 Production Deployment
@@ -115,42 +115,44 @@ docker exec acquisitions-app-dev npm run db:studio
 ### Starting Production Environment
 
 ```bash
-# Start in production mode (detached)
-npm run docker:prod
+# Start in production mode (builds, migrates inside container, starts detached)
+./scripts/prod.sh
 
 # Or manually
-docker-compose -f docker-compose.prod.yml --env-file .env.production up --build -d
+docker compose -f docker-compose.prod.yml --env-file .env.production build
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm app npm run db:migrate
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 ```
 
 This will:
 
-1. Build optimized production image
-2. Connect directly to your Neon Cloud database
-3. Run with resource limits and health checks
-4. Start in detached mode
+1. Build optimized production image (Node 22 LTS, non-root user `nodejs`)
+2. Run database migrations inside an ephemeral container task (no host Node/npm required)
+3. Connect directly to your Neon Cloud database
+4. Run with resource limits, structured JSON stdout logging, and health checks
+5. Start in detached mode
 
 ### Production Commands
 
 ```bash
-# View logs
-npm run docker:logs:prod
+# View logs (structured JSON from stdout/stderr)
+docker logs -f acquisitions-app-prod
 
-# Stop production containers
-npm run docker:prod:down
+# Stop production container (initiates graceful shutdown via SIGTERM)
+docker compose -f docker-compose.prod.yml down
 
 # Rebuild production image
-npm run docker:build:prod
-
-# Scale the application (if needed)
-docker-compose -f docker-compose.prod.yml up --scale app=3 -d
+docker compose -f docker-compose.prod.yml build
 ```
 
 ### Production Features
 
-- **Optimized Build**: Multi-stage Docker build for smaller image size
+- **Optimized Build**: Multi-stage Docker build with Node 22 LTS
 - **Resource Limits**: CPU and memory constraints
-- **Health Checks**: Built-in application health monitoring
-- **Security**: Non-root user, minimal attack surface
+- **Health Checks**: Built-in `/health/live` liveness and `/health/ready` database readiness probes
+- **Structured Logging**: JSON logging directly to stdout/stderr for Docker logging drivers
+- **Graceful Shutdown**: Intercepts SIGTERM/SIGINT, closes HTTP listeners, and drains connections
+- **Security**: Non-root user (UID 1001), hardened trust proxy, Arcjet security headers
 
 ## 🔍 Database Management
 
@@ -159,21 +161,21 @@ docker-compose -f docker-compose.prod.yml up --scale app=3 -d
 #### Development
 
 ```bash
-# Inside the running dev container
-docker exec acquisitions-app-dev npm run db:migrate
+# Inside running dev container
+docker compose -f docker-compose.dev.yml exec app npm run db:migrate
 
 # Or connect to Neon Local directly
-docker exec acquisitions-neon-local psql -U neon -d neondb
+docker compose -f docker-compose.dev.yml exec neon-local psql -U neon -d neondb
 ```
 
 #### Production
 
 ```bash
-# Inside the running prod container
-docker exec acquisitions-app-prod npm run db:migrate
+# Ephemeral container migration (recommended - zero host node/npm dependency)
+docker compose -f docker-compose.prod.yml run --rm app npm run db:migrate
 
-# Or run one-time migration container
-docker run --rm -it --env-file .env.production acquisitions-app npm run db:migrate
+# Or inside the running prod container
+docker exec acquisitions-app-prod npm run db:migrate
 ```
 
 ### Database Studio
@@ -223,64 +225,58 @@ docker exec acquisitions-app-prod npm run db:studio
 
 ```bash
 # Check if Neon Local is healthy
-docker-compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml ps
 
 # Check Neon Local logs
 docker logs acquisitions-neon-local
 
 # Verify environment variables
-docker-compose -f docker-compose.dev.yml config
+docker compose -f docker-compose.dev.yml config
 ```
 
 #### "Database migration failed"
 
 ```bash
 # Check database connection
-docker exec acquisitions-app-dev npm run db:studio
+docker compose -f docker-compose.dev.yml exec app npm run db:studio
 
-# Manual migration
-docker exec -it acquisitions-app-dev npm run db:generate
-docker exec -it acquisitions-app-dev npm run db:migrate
+# Run migrations inside container
+docker compose -f docker-compose.dev.yml exec app npm run db:migrate
 ```
 
 #### "Port already in use"
 
 ```bash
 # Stop all containers
-docker-compose -f docker-compose.dev.yml down
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.prod.yml down
 
 # Check what's using the port
-lsof -i :3000
-lsof -i :5432
+netstat -ano | findstr :3000
 ```
 
 ### Cleanup Commands
 
 ```bash
 # Remove all containers and volumes
-docker-compose -f docker-compose.dev.yml down -v
-docker-compose -f docker-compose.prod.yml down -v
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.prod.yml down -v
 
 # Remove Docker images
 docker rmi acquisitions-app
-
-# Clean up Docker system
-docker system prune -a
 ```
 
 ## 📁 File Structure
 
 ```
 acquisitions/
-├── Dockerfile                 # Multi-stage Docker build
-├── docker-compose.dev.yml     # Development with Neon Local
-├── docker-compose.prod.yml    # Production with Neon Cloud
+├── Dockerfile                 # Multi-stage Docker build (Node 22 LTS, non-root)
+├── docker-compose.dev.yml     # Development with Neon Local & hot reload
+├── docker-compose.prod.yml    # Production with Neon Cloud & resource limits
 ├── .dockerignore              # Files excluded from build
-├── .env.development           # Development environment vars
-├── .env.production            # Production environment vars
-├── .neon_local/               # Neon Local metadata (git ignored)
-└── logs/                      # Application logs (mounted)
+├── .env.development           # Development environment vars (git ignored)
+├── .env.production            # Production environment vars (git ignored)
+└── .neon_local/               # Neon Local metadata (git ignored)
 ```
 
 ## 🎯 Best Practices
