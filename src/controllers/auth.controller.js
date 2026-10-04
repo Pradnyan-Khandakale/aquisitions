@@ -16,9 +16,10 @@ export const signup = async (req, res, next) => {
       });
     }
 
-    const { name, email, password, role } = validationResult.data;
+    const { name, email, password } = validationResult.data;
 
-    const user = await createUser({ name, email, password, role });
+    // Enforce role: 'user' for public registration to prevent privilege escalation
+    const user = await createUser({ name, email, password, role: 'user' });
 
     const token = jwttoken.sign({
       id: user.id,

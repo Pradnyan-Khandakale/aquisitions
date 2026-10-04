@@ -10,6 +10,7 @@ node_modules/
 logs/
 *.log
 *.lg
+coverage/
 
 # Local development and proxy state
 .neon_local/

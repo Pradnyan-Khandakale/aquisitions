@@ -52,7 +52,9 @@ app.get('/health/ready', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    logger.error('Readiness probe database connection failed', { error: err.message });
+    logger.error('Readiness probe database connection failed', {
+      error: err.message,
+    });
     res.status(503).json({
       status: 'NOT_READY',
       database: 'disconnected',
@@ -92,7 +94,7 @@ app.use('/api/deal-stages', dealStageRoutes);
 app.use('/api/acquisitions', acquisitionRoutes);
 
 // Centralized error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error('Unhandled request error:', err);
   res.status(err.status || 500).json({
     error: err.name || 'Internal Server Error',

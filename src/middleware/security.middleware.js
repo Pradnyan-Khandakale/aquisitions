@@ -3,6 +3,10 @@ import logger from '#config/logger.js';
 import { slidingWindow } from '@arcjet/node';
 
 const securityMiddleware = async (req, res, next) => {
+  if (process.env.NODE_ENV === 'test' && !process.env.ENABLE_ARCJET_TEST) {
+    return next();
+  }
+
   try {
     let role = req.user?.role;
     if (!role || typeof role !== 'string' || role.trim() === '') {

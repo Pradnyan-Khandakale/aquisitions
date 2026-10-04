@@ -12,14 +12,15 @@ export const authenticate = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required. Please sign in or provide a Bearer token.',
+        message:
+          'Authentication required. Please sign in or provide a Bearer token.',
       });
     }
 
     const decoded = jwttoken.verify(token);
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid or expired token',
@@ -39,7 +40,7 @@ export const optionalAuthenticate = (req, res, next) => {
       const decoded = jwttoken.verify(token);
       req.user = decoded;
     }
-  } catch (err) {
+  } catch {
     // If token is invalid or expired, continue without setting req.user
   }
   next();

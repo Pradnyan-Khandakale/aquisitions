@@ -1,10 +1,14 @@
 import arcjet, { shield, detectBot, slidingWindow } from '@arcjet/node';
 
 if (!process.env.ARCJET_KEY || process.env.ARCJET_KEY.trim() === '') {
-  console.error(
-    'ARCJET_KEY is missing or empty. Please set the ARCJET_KEY environment variable.'
-  );
-  process.exit(1);
+  if (process.env.NODE_ENV === 'test') {
+    process.env.ARCJET_KEY = 'ajkey_test_dummy_key';
+  } else {
+    console.error(
+      'ARCJET_KEY is missing or empty. Please set the ARCJET_KEY environment variable.'
+    );
+    process.exit(1);
+  }
 }
 
 // Trusted proxy networks (Docker bridge, private subnets, localhost)
