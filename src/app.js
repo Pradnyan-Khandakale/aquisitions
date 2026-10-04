@@ -6,6 +6,9 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { db } from '#config/database.js';
 import authRoutes from '#routes/auth.routes.js';
+import companyRoutes from '#routes/company.routes.js';
+import dealStageRoutes from '#routes/deal-stage.routes.js';
+import acquisitionRoutes from '#routes/acquisition.routes.js';
 import securityMiddleware from '#middleware/security.middleware.js';
 
 const app = express();
@@ -84,5 +87,17 @@ app.get('/api', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/deal-stages', dealStageRoutes);
+app.use('/api/acquisitions', acquisitionRoutes);
+
+// Centralized error handler
+app.use((err, req, res, next) => {
+  logger.error('Unhandled request error:', err);
+  res.status(err.status || 500).json({
+    error: err.name || 'Internal Server Error',
+    message: err.message || 'Something went wrong',
+  });
+});
 
 export default app;
