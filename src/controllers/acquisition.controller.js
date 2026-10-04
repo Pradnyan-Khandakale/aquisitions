@@ -3,8 +3,10 @@ import {
   updateAcquisitionSchema,
   acquisitionIdParamSchema,
 } from '#validations/acquisition.validation.js';
+import { stageTransitionSchema } from '#validations/acquisition-lifecycle.validation.js';
 import { formatValidationError } from '#utils/format.js';
 import * as acquisitionService from '#services/acquisition.service.js';
+import { transitionAcquisitionStage } from '#services/acquisition-lifecycle.service.js';
 import logger from '#config/logger.js';
 
 export const createAcquisition = async (req, res, next) => {
@@ -86,6 +88,15 @@ export const getAcquisition = async (req, res, next) => {
 
 export const updateAcquisition = async (req, res, next) => {
   try {
+    // Explicitly block attempts to bypass the lifecycle policy via generic PATCH
+    if (req.body.deal_stage_id !== undefined || req.body.dealStageId !== undefined) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message:
+          'Stage changes cannot be performed via generic update. Please use PATCH /api/acquisitions/:id/stage.',
+      });
+    }
+
     const paramValidation = acquisitionIdParamSchema.safeParse(req.params);
     if (!paramValidation.success) {
       return res.status(400).json({
@@ -127,6 +138,62 @@ export const updateAcquisition = async (req, res, next) => {
       });
     }
     logger.error('updateAcquisition error:', err);
+    next(err);
+  }
+};
+
+export const transitionStage = async (req, res, next) => {
+  try {
+    const paramValidation = acquisitionIdParamSchema.safeParse(req.params);
+    if (!paramValidation.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: formatValidationError(paramValidation.error),
+      });
+    }
+
+    const bodyValidation = stageTransitionSchema.safeParse(req.body);
+    if (!bodyValidation.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: formatValidationError(bodyValidation.error),
+      });
+    }
+
+    const result = await transitionAcquisitionStage({
+      acquisitionId: paramValidation.data.id,
+      targetStageId: bodyValidation.data.target_stage_id,
+      user: req.user,
+      notes: bodyValidation.data.notes,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Acquisition transitioned successfully from '${result.transition.from_stage.name}' to '${result.transition.to_stage.name}'`,
+      data: result.acquisition,
+      transition: result.transition,
+    });
+  } catch (err) {
+    if (err.status) {
+      const errorTitle =
+        err.status === 401
+          ? 'Unauthorized'
+          : err.status === 403
+            ? 'Forbidden'
+            : err.status === 404
+              ? 'Not Found'
+              : err.status === 409
+                ? 'Conflict'
+                : err.status === 422
+                  ? 'Unprocessable Entity'
+                  : 'Error';
+
+      return res.status(err.status).json({
+        error: errorTitle,
+        message: err.message,
+      });
+    }
+    logger.error('transitionStage error:', err);
     next(err);
   }
 };

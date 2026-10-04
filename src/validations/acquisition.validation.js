@@ -38,8 +38,6 @@ export const updateAcquisitionSchema = z
     description: z.string().max(5000).trim().optional().nullable(),
     company_id: z.coerce.number().int().positive('Company ID must be a positive integer').optional(),
     companyId: z.coerce.number().int().positive('Company ID must be a positive integer').optional(),
-    deal_stage_id: z.coerce.number().int().positive('Deal stage ID must be a positive integer').optional(),
-    dealStageId: z.coerce.number().int().positive('Deal stage ID must be a positive integer').optional(),
     status: z.enum(['active', 'won', 'lost', 'abandoned', 'on-hold']).optional(),
     estimated_value: z.coerce.number().positive('Estimated value must be a positive number').optional().nullable(),
     estimatedValue: z.coerce.number().positive('Estimated value must be a positive number').optional().nullable(),
@@ -52,8 +50,6 @@ export const updateAcquisitionSchema = z
     if (data.description !== undefined) transformed.description = data.description;
     const cid = data.company_id ?? data.companyId;
     if (cid !== undefined) transformed.company_id = cid;
-    const sid = data.deal_stage_id ?? data.dealStageId;
-    if (sid !== undefined) transformed.deal_stage_id = sid;
     if (data.status !== undefined) transformed.status = data.status;
     const val = data.estimated_value ?? data.estimatedValue;
     if (val !== undefined) transformed.estimated_value = val;
