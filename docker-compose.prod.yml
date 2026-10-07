@@ -1,4 +1,17 @@
 services:
+  # Dedicated database migration runner (executes before application starts)
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migration
+    container_name: acquisitions-migration-prod
+    env_file:
+      - .env.production
+    restart: 'no'
+    networks:
+      - acquisitions-prod
+
   # Node.js application for production
   app:
     build:
@@ -6,6 +19,9 @@ services:
       dockerfile: Dockerfile
       target: production
     container_name: acquisitions-app-prod
+    depends_on:
+      migration:
+        condition: service_completed_successfully
     ports:
       - '${PORT:-3000}:3000'
     env_file:

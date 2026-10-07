@@ -115,19 +115,19 @@ docker compose -f docker-compose.dev.yml exec app npm run db:studio
 ### Starting Production Environment
 
 ```bash
-# Start in production mode (builds, migrates inside container, starts detached)
+# Start in production mode (builds, migrates via migration container, starts app detached)
 ./scripts/prod.sh
 
 # Or manually
 docker compose -f docker-compose.prod.yml --env-file .env.production build
-docker compose -f docker-compose.prod.yml --env-file .env.production run --rm app npm run db:migrate
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm migration
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 ```
 
 This will:
 
-1. Build optimized production image (Node 22 LTS, non-root user `nodejs`)
-2. Run database migrations inside an ephemeral container task (no host Node/npm required)
+1. Build optimized production image (Node 22 LTS, non-root user `nodejs`, runtime dependencies only)
+2. Run database migrations inside an ephemeral `migration` container task (providing `drizzle-kit` in an isolated stage)
 3. Connect directly to your Neon Cloud database
 4. Run with resource limits, structured JSON stdout logging, and health checks
 5. Start in detached mode
@@ -171,12 +171,12 @@ docker compose -f docker-compose.dev.yml exec neon-local psql -U neon -d neondb
 #### Production
 
 ```bash
-# Ephemeral container migration (recommended - zero host node/npm dependency)
-docker compose -f docker-compose.prod.yml run --rm app npm run db:migrate
-
-# Or inside the running prod container
-docker exec acquisitions-app-prod npm run db:migrate
+# Dedicated migration container (Pattern A - uses isolated migration stage with drizzle-kit)
+docker compose -f docker-compose.prod.yml run --rm migration
 ```
+
+> [!NOTE]
+> The production runtime image (`target: production`) intentionally strips `drizzle-kit`, `tsx`, and `esbuild` to keep the runtime container minimal and eliminate non-runtime CVEs. Production migrations are executed via the dedicated `migration` container runner (`target: migration`) before application startup.
 
 ### Database Studio
 
@@ -270,14 +270,58 @@ docker rmi acquisitions-app
 
 ```
 acquisitions/
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml          # GitHub Actions CI/CD release pipeline
 ├── Dockerfile                 # Multi-stage Docker build (Node 22 LTS, non-root)
 ├── docker-compose.dev.yml     # Development with Neon Local & hot reload
 ├── docker-compose.prod.yml    # Production with Neon Cloud & resource limits
 ├── .dockerignore              # Files excluded from build
+├── .trivyignore               # Trivy vulnerability suppression policy
 ├── .env.development           # Development environment vars (git ignored)
 ├── .env.production            # Production environment vars (git ignored)
 └── .neon_local/               # Neon Local metadata (git ignored)
 ```
+
+## 📦 Container Registry & CI/CD Release (Phase 3.3)
+
+Production images are automatically built, security scanned with Trivy, and published to GitHub Container Registry (GHCR) on pushes to `main`.
+
+### Registry Location
+
+```text
+ghcr.io/<github-owner>/aquisitions
+```
+
+### Image Tagging Conventions
+
+Every approved release publishes three tags:
+
+1. **Immutable Commit SHA:** `ghcr.io/<github-owner>/aquisitions:<full-commit-sha>`
+   - Provides an exact, immutable reference for subsequent deployments (e.g., Kubernetes in Phase 4).
+2. **Branch Reference:** `ghcr.io/<github-owner>/aquisitions:main`
+   - Points to the latest validated release built from the `main` branch.
+3. **Rolling Tag:** `ghcr.io/<github-owner>/aquisitions:latest`
+   - Points to the most recent production image.
+
+### Pulling and Running an Immutable Image
+
+```bash
+# Pull by exact commit SHA
+docker pull ghcr.io/<github-owner>/aquisitions:<commit-sha>
+
+# Run production container
+docker run -d \
+  -p 3000:3000 \
+  --name acquisitions-app-prod \
+  --env-file .env.production \
+  ghcr.io/<github-owner>/aquisitions:<commit-sha>
+```
+
+### CI/CD Security Gating
+
+- Pull Requests run the complete test suite, coverage thresholds, dependency audit, Docker build, and Trivy scan, but cannot push to GHCR.
+- Release to GHCR executes only after all quality checks and the Trivy container scan pass with zero unsuppressed HIGH or CRITICAL findings.
 
 ## 🎯 Best Practices
 

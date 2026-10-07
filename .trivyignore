@@ -1,0 +1,13 @@
+# ==============================================================================
+# Acquisitions API - Trivy Security Policy Configuration
+# ==============================================================================
+# Policy: Strict zero-tolerance gate for HIGH and CRITICAL vulnerabilities.
+# Build/release fails closed (--exit-code 1) on any unresolved HIGH/CRITICAL finding.
+#
+# Image Construction & Hardening:
+# The multi-stage Dockerfile uses a builder stage that prunes non-runtime migration
+# and CLI tooling (drizzle-kit, tsx, esbuild). Consequently, no development tooling
+# or transitive Go binaries exist in the production runtime container.
+#
+# Active Suppressions: None (all production runtime packages and OS layers are clean).
+# ==============================================================================

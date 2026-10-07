@@ -23,9 +23,9 @@ fi
 echo "📦 Building production container..."
 docker compose -f docker-compose.prod.yml build
 
-# Run database migrations inside one-off container (avoids host Node/npm dependency)
-echo "📜 Applying latest schema migrations with Drizzle inside container..."
-docker compose -f docker-compose.prod.yml run --rm app npm run db:migrate
+# Run database migrations inside dedicated migration container (avoids host Node/npm dependency)
+echo "📜 Applying latest schema migrations with Drizzle inside migration container..."
+docker compose -f docker-compose.prod.yml run --rm migration
 
 # Start production application container
 echo "🚀 Starting production container..."
