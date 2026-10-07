@@ -28,9 +28,9 @@ jobs:
 
       - name: Validate TEST_DATABASE_URL secret presence (preflight)
         run: |
-          if [ -z "${TEST_DATABASE_URL}" ]; then
-            echo "::error::TEST_DATABASE_URL GitHub Actions secret is not configured."
-            echo "::error::Configure TEST_DATABASE_URL under Settings → Secrets and variables → Actions."
+          if [ -z "${TEST_DATABASE_URL:-}" ]; then
+            echo "::error::TEST_DATABASE_URL is unavailable to this GitHub Actions job."
+            echo "::error::Configure it as a GitHub Actions repository secret under Settings → Secrets and variables → Actions."
             exit 1
           fi
         env:
