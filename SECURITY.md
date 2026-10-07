@@ -141,6 +141,28 @@ A hardened GitHub Actions workflow (`.github/workflows/ci-cd.yml`) automates qua
 > [!IMPORTANT]
 > **Strict Secret Isolation:** Production `DATABASE_URL` is intentionally excluded from the CI quality/test job. The test runner only receives `TEST_DATABASE_URL`. If `TEST_DATABASE_URL` is unset or points to an unsafe database, test execution aborts immediately without attempting destructive cleanup.
 
+#### GitHub Repository Secret Configuration Procedure
+
+To configure the required secret for GitHub Actions CI/CD:
+
+```text
+GitHub Repository
+→ Settings
+→ Secrets and variables
+→ Actions
+→ New repository secret
+→ Name: TEST_DATABASE_URL
+→ Value: dedicated test database connection string
+```
+
+**Configuration & Safety Requirements:**
+
+- **Dedicated Test Database / Branch:** Must point to an isolated, dedicated test database or ephemeral Neon test branch specifically allocated for automated CI runs.
+- **Never Production:** Must never point to or share an instance with production or staging data.
+- **Fail-Closed Guard Enforcement:** Application and test harnesses (`src/config/database.js` and `tests/helpers/db.helper.js`) enforce fail-closed verification. The active database queried via `SELECT current_database()` must contain `test` in its identifier and will reject `neondb` or `postgres` with a fatal safety violation before destructive operations or tests execute.
+- **Encrypted Secret Storage:** The connection string is stored exclusively as an encrypted GitHub Actions repository secret and injected into CI via `${{ secrets.TEST_DATABASE_URL }}`.
+- **Never Committed:** Secret values must never be stored in repository files, tracked code, or documentation.
+
 ### Database Safety Invariants in CI
 
 1. `NODE_ENV=test` is explicitly set during quality gate execution.
