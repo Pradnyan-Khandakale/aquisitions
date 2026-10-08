@@ -36,6 +36,7 @@ Never commit actual credentials, API keys, JWT secrets, or production connection
 2. In production, configuration must be injected securely at runtime via:
    - Cloud Secret Managers (e.g., AWS Secrets Manager, GCP Secret Manager, Doppler, or HashiCorp Vault).
    - Container Task / Pod environment variable injection from secret stores.
+   - Kubernetes Secrets (e.g., `acquisitions-secrets` in namespace `acquisitions`, see [K8S_SETUP.md](file:///c:/Users/91932/OneDrive/Desktop/Production-Ready API/aquisitions/K8S_SETUP.md)).
 3. Required production variables:
    - `DATABASE_URL`: Production PostgreSQL connection string with `sslmode=require`.
    - `JWT_SECRET`: Cryptographically strong 256-bit random string (never default or fallback).
@@ -172,14 +173,20 @@ GitHub Repository
 
 ### Container Security & Trivy Release-Blocking Policy
 
-1. **Hardened Multi-Stage Build:** The Dockerfile employs a dedicated `builder` stage that runs `npm ci --omit=dev` and prunes non-runtime migration and CLI tooling (`drizzle-kit`, `tsx`, `esbuild`). The `production` stage copies only runtime dependencies and application source files.
-2. **Deterministic Security Scan:** Scans the exact production container using deterministic Trivy `0.75.0` (`aquasec/trivy:0.75.0`) for both vulnerabilities and exposed secrets:
+1. **Hardened Multi-Stage Build:** The Dockerfile employs a dedicated `builder` stage that runs `npm ci --omit=dev` and prunes non-runtime migration and CLI tooling (`drizzle-kit`, `tsx`, `esbuild`). The `production` stage copies only runtime dependencies and application source files. A separate `migration` stage provides an isolated container for schema migrations.
+2. **Deterministic Security Scan:** Scans both exact containers using deterministic Trivy `0.75.0` (`aquasec/trivy:0.75.0`) for both vulnerabilities and exposed secrets:
+
    ```bash
-   aquasec/trivy:0.75.0 image --scanners vuln,secret --severity HIGH,CRITICAL --skip-dirs /usr/local/lib/node_modules/npm --exit-code 1 <image>
+   # Application runtime image scan:
+   aquasec/trivy:0.75.0 image --scanners vuln,secret --severity HIGH,CRITICAL --skip-dirs /usr/local/lib/node_modules/npm --exit-code 1 <app-image>
+
+   # Migration runner image scan:
+   aquasec/trivy:0.75.0 image --scanners vuln,secret --severity HIGH,CRITICAL --skip-dirs /usr/local/lib/node_modules/npm --skip-files "**/esbuild" --exit-code 1 <migration-image>
    ```
+
 3. **Fail-Closed Gate:** Zero tolerance for `HIGH` or `CRITICAL` findings. Any unresolved finding terminates the workflow and blocks release.
 4. **Zero Active Suppressions (`.trivyignore`):** Because all non-runtime tooling is stripped during the Docker build stage, no application-level CVE suppressions are needed in `.trivyignore`.
-5. **Tooling Directory Exclusion Rationale:** `/usr/local/lib/node_modules/npm` contains bundled npm CLI tooling from the upstream `node:22-alpine` base image. It is excluded from the scan because the production container executes only `node src/index.js` and does not use or expose npm CLI binaries at runtime.
+5. **Tooling Directory Exclusion Rationale:** `/usr/local/lib/node_modules/npm` contains bundled npm CLI tooling from the upstream `node:22-alpine` base image. It is excluded from the scan because the production container executes only `node src/index.js` and does not use or expose npm CLI binaries at runtime. For the migration image, internal `esbuild` bundled within `drizzle-kit` is isolated exclusively to the migration runner.
 
 ### GHCR Publishing & Immutable Tagging Convention
 
@@ -187,19 +194,21 @@ Images are published to GitHub Container Registry at:
 
 ```text
 ghcr.io/<github-owner>/aquisitions
+ghcr.io/<github-owner>/aquisitions-migration
 ```
 
 Tags generated on each verified release to `main`:
 
-- **Immutable Commit SHA:** `ghcr.io/<github-owner>/aquisitions:<full-commit-sha>` (Deterministic artifact reference for deployment).
-- **Branch Tag:** `ghcr.io/<github-owner>/aquisitions:main` (Tracks the latest validated build on main).
-- **Rolling Tag:** `ghcr.io/<github-owner>/aquisitions:latest` (Tracks the latest production-ready container).
+- **Immutable Commit SHA:** `...:<full-commit-sha>` (Deterministic artifact reference for deployment). Both app and migration images share the exact same commit SHA.
+- **Branch Tag:** `...:main` (Tracks the latest validated build on main).
+- **Rolling Tag:** `...:latest` (Tracks the latest production-ready container).
 
-Only the exact container image that passed the Trivy security scan is tagged and pushed to GHCR. Images are never rebuilt between security approval and publication.
+Only the exact container images that passed their respective Trivy security scans are tagged and pushed to GHCR. Images are never rebuilt between security approval and publication.
 
 ### Production Migration Architecture & Contract
 
 1. **Isolated Migration Runner (Pattern A):** The Dockerfile defines a dedicated `migration` stage (`target: migration`) that retains `drizzle-kit` and executes schema migrations via `npm run db:migrate`.
 2. **Minimal Runtime Surface:** The final production runtime image (`target: production`) intentionally strips `drizzle-kit`, `tsx`, and `esbuild`, ensuring zero development-tooling CVEs exist in the production runtime container.
-3. **Execution Ordering:** In Docker Compose (`docker-compose.prod.yml`), the `app` service depends on `migration` with `condition: service_completed_successfully`. Database migrations execute and complete before the runtime container starts.
-4. **Phase 4 Deployment Reference:** The immutable commit SHA tag `ghcr.io/<github-owner>/aquisitions:<full-commit-sha>` published by the pipeline serves as the deployment source of truth.
+3. **Execution Ordering:** Both in Docker Compose (`docker-compose.prod.yml`) and Kubernetes (`k8s/migration-job.yaml`), database migrations execute and complete successfully before the runtime application starts serving traffic.
+4. **Phase 4 Deployment Reference:** The immutable commit SHA tags published by the pipeline serve as the deployment source of truth.
+5. **Minikube Database Isolation Invariant:** Minikube deployment validation must NEVER point to or execute against production databases (`neondb`, `postgres`). Minikube validation requires an explicitly isolated non-production database (e.g. `acquisitions_test`). Deployment scripts enforce in-memory target verification before applying any Kubernetes migration Job.

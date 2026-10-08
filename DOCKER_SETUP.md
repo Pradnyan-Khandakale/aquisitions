@@ -285,38 +285,62 @@ acquisitions/
 
 ## 📦 Container Registry & CI/CD Release (Phase 3.3)
 
-Production images are automatically built, security scanned with Trivy, and published to GitHub Container Registry (GHCR) on pushes to `main`.
+Production images are automatically built, security scanned with Trivy, and published to GitHub Container Registry (GHCR) on pushes to `main`. The release workflow publishes both exact images corresponding to the same Git commit SHA:
 
-### Registry Location
+### Registry Images
 
-```text
-ghcr.io/<github-owner>/aquisitions
-```
+1. **Application Runtime Image:**
+
+   ```text
+   ghcr.io/<github-owner>/aquisitions:<commit-sha>
+   ```
+
+   - Minimal Node.js 22 LTS runtime.
+   - Development and migration tooling (`drizzle-kit`, `tsx`, `esbuild`) stripped to ensure zero runtime CVEs.
+
+2. **Database Migration Image:**
+
+   ```text
+   ghcr.io/<github-owner>/aquisitions-migration:<commit-sha>
+   ```
+
+   - Dedicated migration runner container (`target: migration`).
+   - Retains `drizzle-kit` and schema migrations solely for pre-deployment database migration Jobs.
 
 ### Image Tagging Conventions
 
-Every approved release publishes three tags:
+Every approved release publishes three tags for each image:
 
-1. **Immutable Commit SHA:** `ghcr.io/<github-owner>/aquisitions:<full-commit-sha>`
-   - Provides an exact, immutable reference for subsequent deployments (e.g., Kubernetes in Phase 4).
-2. **Branch Reference:** `ghcr.io/<github-owner>/aquisitions:main`
+1. **Immutable Commit SHA:** `...:<full-commit-sha>`
+   - Provides an exact, immutable reference for subsequent deployments (e.g., Kubernetes in Phase 4). Both app and migration images share the exact same commit SHA.
+2. **Branch Reference:** `...:main`
    - Points to the latest validated release built from the `main` branch.
-3. **Rolling Tag:** `ghcr.io/<github-owner>/aquisitions:latest`
-   - Points to the most recent production image.
+3. **Rolling Tag:** `...:latest`
+   - Points to the most recent release.
 
 ### Pulling and Running an Immutable Image
 
 ```bash
 # Pull by exact commit SHA
 docker pull ghcr.io/<github-owner>/aquisitions:<commit-sha>
+docker pull ghcr.io/<github-owner>/aquisitions-migration:<commit-sha>
 
-# Run production container
+# Run migration container
+docker run --rm \
+  --env-file .env.production \
+  ghcr.io/<github-owner>/aquisitions-migration:<commit-sha>
+
+# Run production application container
 docker run -d \
   -p 3000:3000 \
   --name acquisitions-app-prod \
   --env-file .env.production \
   ghcr.io/<github-owner>/aquisitions:<commit-sha>
 ```
+
+### Deploying to Kubernetes (Phase 4.1)
+
+For Kubernetes deployments (namespace, secrets, migration job, deployment, service, ingress, and Minikube validation), refer to the comprehensive [Kubernetes Setup Guide](file:///c:/Users/91932/OneDrive/Desktop/Production-Ready API/aquisitions/K8S_SETUP.md).
 
 ### CI/CD Security Gating
 

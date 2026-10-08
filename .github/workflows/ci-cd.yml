@@ -75,6 +75,7 @@ jobs:
         run: |
           IMAGE_NAME="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "IMAGE_NAME_MIGRATION=${IMAGE_NAME}-migration" >> $GITHUB_ENV
           echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
@@ -89,7 +90,16 @@ jobs:
             -t "${IMAGE_NAME}:latest" \
             .
 
-      - name: Run Trivy container security scan
+      - name: Build migration Docker image
+        run: |
+          docker build \
+            --target migration \
+            -t "${IMAGE_NAME_MIGRATION}:${IMAGE_TAG}" \
+            -t "${IMAGE_NAME_MIGRATION}:main" \
+            -t "${IMAGE_NAME_MIGRATION}:latest" \
+            .
+
+      - name: Run Trivy container security scan (application)
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -102,6 +112,20 @@ jobs:
             --exit-code 1 \
             "${IMAGE_NAME}:${IMAGE_TAG}"
 
+      - name: Run Trivy container security scan (migration)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${GITHUB_WORKSPACE}/.trivyignore:/.trivyignore" \
+            aquasec/trivy:0.75.0 image \
+            --scanners vuln,secret \
+            --severity HIGH,CRITICAL \
+            --skip-dirs /usr/local/lib/node_modules/npm \
+            --skip-files "**/esbuild" \
+            --ignorefile /.trivyignore \
+            --exit-code 1 \
+            "${IMAGE_NAME_MIGRATION}:${IMAGE_TAG}"
+
       - name: Authenticate with GitHub Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
@@ -110,14 +134,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish production Docker image to GHCR
+      - name: Publish Docker images to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          echo "Publishing immutable commit SHA tag: ${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "Publishing immutable commit SHA application tag: ${IMAGE_NAME}:${IMAGE_TAG}"
           docker push "${IMAGE_NAME}:${IMAGE_TAG}"
 
-          echo "Publishing branch tag: ${IMAGE_NAME}:main"
+          echo "Publishing application branch tag: ${IMAGE_NAME}:main"
           docker push "${IMAGE_NAME}:main"
 
-          echo "Publishing latest rolling tag: ${IMAGE_NAME}:latest"
+          echo "Publishing application latest rolling tag: ${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:latest"
+
+          echo "Publishing immutable commit SHA migration tag: ${IMAGE_NAME_MIGRATION}:${IMAGE_TAG}"
+          docker push "${IMAGE_NAME_MIGRATION}:${IMAGE_TAG}"
+
+          echo "Publishing migration branch tag: ${IMAGE_NAME_MIGRATION}:main"
+          docker push "${IMAGE_NAME_MIGRATION}:main"
+
+          echo "Publishing migration latest rolling tag: ${IMAGE_NAME_MIGRATION}:latest"
+          docker push "${IMAGE_NAME_MIGRATION}:latest"

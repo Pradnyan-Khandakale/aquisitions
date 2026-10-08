@@ -1,0 +1,6 @@
+kubeconfig_path    = "~/.kube/config"
+kubeconfig_context = "minikube"
+namespace          = "acquisitions"
+environment        = "production"
+cors_origin        = "https://app.example.com"
+log_level          = "info"
