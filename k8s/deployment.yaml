@@ -38,7 +38,7 @@ spec:
       containers:
         - name: app
           # Target the immutable commit SHA production image:
-          image: ghcr.io/pradnyan-khandakale/aquisitions:7f23d58
+          image: ghcr.io/pradnyan-khandakale/aquisitions
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -8,7 +8,10 @@ resources:
   - service.yaml
   - deployment.yaml
   - ingress.yaml
+  - migration-job.yaml
 
 images:
   - name: ghcr.io/pradnyan-khandakale/aquisitions
-    newTag: 7f23d58
+    newTag: tag-required
+  - name: ghcr.io/pradnyan-khandakale/aquisitions-migration
+    newTag: tag-required

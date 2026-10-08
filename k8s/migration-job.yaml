@@ -32,7 +32,7 @@ spec:
       containers:
         - name: migration
           # Target the immutable commit SHA migration image:
-          image: ghcr.io/pradnyan-khandakale/aquisitions-migration:7f23d58
+          image: ghcr.io/pradnyan-khandakale/aquisitions-migration
           imagePullPolicy: IfNotPresent
           command: ['npm', 'run', 'db:migrate']
           envFrom:
