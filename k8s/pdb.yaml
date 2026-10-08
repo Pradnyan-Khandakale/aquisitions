@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: acquisitions-app-pdb
+  namespace: acquisitions
+  labels:
+    app.kubernetes.io/name: acquisitions-api
+    app.kubernetes.io/part-of: acquisitions
+    app.kubernetes.io/component: api-server
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: acquisitions-api
+      app.kubernetes.io/component: api-server

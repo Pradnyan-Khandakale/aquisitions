@@ -10,11 +10,16 @@ import companyRoutes from '#routes/company.routes.js';
 import dealStageRoutes from '#routes/deal-stage.routes.js';
 import acquisitionRoutes from '#routes/acquisition.routes.js';
 import securityMiddleware from '#middleware/security.middleware.js';
+import requestIdMiddleware from '#middleware/request-id.middleware.js';
+import errorHandler from '#middleware/error.middleware.js';
 
 const app = express();
 
 // Trust first proxy hop (Docker bridge, ALB, Nginx, Cloudflare)
 app.set('trust proxy', 1);
+
+// Establish request correlation for every inbound request
+app.use(requestIdMiddleware);
 
 app.use(helmet());
 app.use(express.json());
@@ -22,11 +27,45 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors());
 
-app.use(
-  morgan('combined', {
-    stream: { write: message => logger.info(message.trim()) },
-  })
-);
+// Structured HTTP request logging
+if (process.env.NODE_ENV === 'production') {
+  app.use(
+    morgan(
+      (tokens, req, res) => {
+        return JSON.stringify({
+          method: tokens.method(req, res),
+          path: tokens.url(req, res),
+          status: Number(tokens.status(req, res)),
+          durationMs: Number(tokens['response-time'](req, res)),
+          requestId: req.id || res.locals?.requestId,
+          ip: tokens['remote-addr'](req, res),
+          userAgent: tokens['user-agent'](req, res),
+        });
+      },
+      {
+        stream: {
+          write: message => {
+            try {
+              const data = JSON.parse(message);
+              logger.info(
+                `HTTP ${data.method} ${data.path} ${data.status}`,
+                data
+              );
+            } catch {
+              logger.info(message.trim());
+            }
+          },
+        },
+      }
+    )
+  );
+} else {
+  app.use(
+    morgan('combined', {
+      stream: { write: message => logger.info(message.trim()) },
+    })
+  );
+}
 
 // -------------------------------------------------------------
 // Health Probes (Defined before securityMiddleware to avoid bot/rate-limit blocking)
@@ -94,12 +133,6 @@ app.use('/api/deal-stages', dealStageRoutes);
 app.use('/api/acquisitions', acquisitionRoutes);
 
 // Centralized error handler
-app.use((err, req, res, _next) => {
-  logger.error('Unhandled request error:', err);
-  res.status(err.status || 500).json({
-    error: err.name || 'Internal Server Error',
-    message: err.message || 'Something went wrong',
-  });
-});
+app.use(errorHandler);
 
 export default app;

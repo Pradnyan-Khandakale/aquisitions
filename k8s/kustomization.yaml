@@ -9,6 +9,7 @@ resources:
   - deployment.yaml
   - ingress.yaml
   - migration-job.yaml
+  - pdb.yaml
 
 images:
   - name: ghcr.io/pradnyan-khandakale/aquisitions

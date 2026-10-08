@@ -40,9 +40,8 @@ export const signup = async (req, res, next) => {
       },
     });
   } catch (e) {
-    logger.error('Signup error', e);
-
     if (e.message === 'User with this email already exists') {
+      logger.warn('Signup rejected: email already exists');
       return res.status(409).json({ error: 'Email already exist' });
     }
 
@@ -84,9 +83,8 @@ export const signIn = async (req, res, next) => {
       },
     });
   } catch (e) {
-    logger.error('Sign in error', e);
-
     if (e.message === 'User not found' || e.message === 'Invalid password') {
+      logger.warn('Sign in failed: invalid credentials');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -103,7 +101,6 @@ export const signOut = async (req, res, next) => {
       message: 'User signed out successfully',
     });
   } catch (e) {
-    logger.error('Sign out error', e);
     next(e);
   }
 };
