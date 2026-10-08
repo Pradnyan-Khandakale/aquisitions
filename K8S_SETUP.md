@@ -141,6 +141,7 @@ Kubernetes does not provide automatic `depends_on` sequencing between Jobs and D
 - **Windows (PowerShell):** `.\scripts\deploy-k8s.ps1 -ImageTag "<IMAGE_TAG>" -DatabaseUrl "<URL>" [-DryRun]`
 
 #### Authoritative Image Tag Resolution:
+
 1. **Explicit Tag Override:** When `IMAGE_TAG` / `-ImageTag` is supplied, it is authoritative.
 2. **Current Git SHA Derivation:** When omitted, the scripts automatically derive the active Git commit SHA (`git rev-parse HEAD`).
 3. **Fail-Closed Requirement:** If Git metadata is unavailable and no tag is supplied, deployment halts immediately.
@@ -148,6 +149,7 @@ Kubernetes does not provide automatic `depends_on` sequencing between Jobs and D
 5. **Unified Lockstep SHA:** Both application runtime and database migration images are rendered from the exact same release SHA.
 
 #### Native Kustomize Integration:
+
 - **Base Manifests (`k8s/kustomization.yaml`):** The tracked base kustomization uses `newTag: tag-required`. Direct `kubectl apply --dry-run=client -k k8s/` validates structure, while preventing silent deployment of stale historical releases or untagged `:latest` defaults.
 - **Ephemeral Release Overlays:** The deployment scripts generate a transient Kustomize overlay at deployment time, render manifests with the authoritative SHA using native `kubectl kustomize`, sequence the migration Job ahead of application rollout, and clean up the overlay automatically. Tracked repository files are never modified.
 
