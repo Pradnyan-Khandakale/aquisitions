@@ -801,7 +801,7 @@ kubectl logs -n acquisitions -l app.kubernetes.io/name=acquisitions-api --tail=1
 
 ## License
 
-This project is licensed under the [ISC License](file:///c:/Users/91932/OneDrive/Desktop/Production-Ready API/aquisitions/package.json).
+This project is licensed under the [ISC License]
 
 ---
 
